@@ -1,6 +1,7 @@
 #!/usr/bin/env rake
 require 'sequel'
 require 'hirb'
+require 'uri'
 require_relative 'pgstats'
 
 def pgstats_to_console(method_name)
@@ -14,9 +15,17 @@ def render(table)
 end
 
 def database_url
-  url = ENV["DATABASE_URL"]
-  raise 'Missing database url. List urls with `heroku config`.' if url.to_s.empty?
+  database_identifier = ARGV.last || ''
+  task database_identifier.to_sym do ; end
+  url = ENV[database_identifier] || ''
+  raise "Missing database url for #{database_identifier}. Specify a config variable name after your command to select a database url." if url.to_s.empty?
   url
+end
+
+desc "Prints psql for connecting to database."
+task :psql do 
+  uri = URI.parse(database_url)
+  p "PGPASSWORD='#{uri.password}' psql -U #{uri.user} -h #{uri.host} -d #{uri.path[1..-1]}"
 end
 
 desc "Counts scans, inserts, updates, and deletes."
