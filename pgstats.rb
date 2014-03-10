@@ -221,9 +221,9 @@ class PGStats
     @db[<<-SQL].all
       SELECT 
          relname, 
-         CASE idx_scan 
-           WHEN 0 THEN '0' 
-           ELSE (100 * idx_scan / (seq_scan + idx_scan))::text 
+         CASE 
+           WHEN idx_scan > 0 THEN (100 * idx_scan / (seq_scan + idx_scan))::text 
+           ELSE '0'
          END percent_of_times_index_used, 
          n_live_tup rows_in_table
        FROM 
