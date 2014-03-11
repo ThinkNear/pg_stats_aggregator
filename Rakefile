@@ -5,7 +5,7 @@ require 'uri'
 require_relative 'pgstats'
 
 def pgstats_to_console(method_name)
-  Sequel.connect(database_url) do |db| 
+  Sequel.connect(fetch_database_url) do |db| 
     render(PGStats.new(db: db).send(method_name.to_sym))
   end
 end
@@ -14,7 +14,7 @@ def render(table)
   puts Hirb::Helpers::Table.render(table, :resize => true, :max_width => 200)
 end
 
-def database_url
+def fetch_database_url
   database_identifier = ARGV.last || ''
   task database_identifier.to_sym do ; end
   url = ENV[database_identifier] || ''
@@ -22,10 +22,12 @@ def database_url
   url
 end
 
-desc "Prints psql for connecting to database."
-task :psql do 
+desc "Prints psql for connecting to database. Must be used locally."
+task :psql do
+  database_url = ARGV.last || ''
+  task database_url.to_sym do ; end
   uri = URI.parse(database_url)
-  p "PGPASSWORD='#{uri.password}' psql -U #{uri.user} -h #{uri.host} -d #{uri.path[1..-1]}"
+  exec "PGPASSWORD='#{uri.password}' psql -U #{uri.user} -h #{uri.host} -p #{uri.port} -d #{uri.path[1..-1]}"
 end
 
 desc "Counts scans, inserts, updates, and deletes."
